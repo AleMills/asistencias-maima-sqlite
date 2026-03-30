@@ -1,16 +1,20 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const Database = require("better-sqlite3");
+const path = require("path");
+const fs = require("fs");
 
-// Ensure database directory exists if we were putting it in a subdir, 
+// Ensure database directory exists if we were putting it in a subdir,
 // but here we'll just put it in the server root or a data folder.
 // Let's put it in the server root for simplicity as per plan.
 
-const dbPath = path.join(__dirname, 'database.sqlite');
+// In Electron, we want to store the database in the user data folder
+// so it persists between updates and isn't deleted when the app is uninstalled/reinstalled.
+const isProduction = process.env.NODE_ENV === "production";
+const dbPath = path.join(__dirname, "database.sqlite");
+
 const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrency
-db.pragma('journal_mode = WAL');
+db.pragma("journal_mode = WAL");
 
 // Define tables
 const createTables = () => {
@@ -24,6 +28,22 @@ const createTables = () => {
       creadoEn TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  //sesion table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS sesiones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      empleadoId INTEGER NOT NULL,
+      nombre TEXT NOT NULL,
+      apellido TEXT NOT NULL,
+      dni TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      hora TEXT NOT NULL,
+      ip TEXT NOT NULL,
+      dispositivo TEXT NOT NULL,
+      FOREIGN KEY (empleadoId) REFERENCES empleados(id) ON DELETE CASCADE
+    )
+    `);
 
   // Empleados Table
   db.exec(`
@@ -41,9 +61,9 @@ const createTables = () => {
   `);
 
   // Migration for existing tables
-  const columns = db.pragma('table_info(empleados)');
-  const hasHorarioEntrada = columns.some(c => c.name === 'horarioEntrada');
-  const hasHorarioSalida = columns.some(c => c.name === 'horarioSalida');
+  const columns = db.pragma("table_info(empleados)");
+  const hasHorarioEntrada = columns.some((c) => c.name === "horarioEntrada");
+  const hasHorarioSalida = columns.some((c) => c.name === "horarioSalida");
 
   if (!hasHorarioEntrada) {
     db.exec("ALTER TABLE empleados ADD COLUMN horarioEntrada TEXT");

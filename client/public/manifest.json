@@ -1,0 +1,17 @@
+{
+  "name": "Asistencias Nexo 0km",
+  "short_name": "Asistencias",
+  "description": "Sistema de gestión de asistencias Nexo 0km",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f59e0b",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

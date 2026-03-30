@@ -22,10 +22,13 @@ exports.marcarAsistencia = async (req, res) => {
   // Parse User Agent
   const parser = new UAParser(userAgent);
   const result = parser.getResult();
-  const deviceName =
-    `${result.device.vendor || ""} ${result.device.model || ""} (${
-      result.os.name || ""
-    })`.trim() || userAgent;
+  const os = result.os.name || "SO Desconocido";
+  const browser = result.browser.name || "Navegador Desconocido";
+  let deviceName = `${os} - ${browser}`;
+
+  if (result.device.model) {
+    deviceName += ` (${result.device.vendor || ""} ${result.device.model})`;
+  }
 
   // IP handling
   let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
@@ -35,7 +38,9 @@ exports.marcarAsistencia = async (req, res) => {
   const horaActual = getNowTimeString();
 
   try {
-    const empleado = db.prepare("SELECT * FROM empleados WHERE id = ?").get(empleadoId);
+    const empleado = db
+      .prepare("SELECT * FROM empleados WHERE id = ?")
+      .get(empleadoId);
     if (!empleado)
       return res.status(404).json({ message: "Empleado no encontrado" });
 
@@ -93,7 +98,7 @@ exports.marcarAsistencia = async (req, res) => {
 
 exports.getAsistencias = async (req, res) => {
   const { from, to, empleadoId } = req.query;
-  
+
   let sql = "SELECT * FROM asistencias WHERE 1=1";
   const params = [];
 
@@ -137,7 +142,9 @@ exports.manualMark = async (req, res) => {
         .json({ message: "Contraseña de administrador incorrecta" });
 
     // 2. Perform Manual Mark
-    const empleado = db.prepare("SELECT * FROM empleados WHERE id = ?").get(empleadoId);
+    const empleado = db
+      .prepare("SELECT * FROM empleados WHERE id = ?")
+      .get(empleadoId);
     if (!empleado)
       return res.status(404).json({ message: "Empleado no encontrado" });
 
@@ -169,11 +176,14 @@ exports.manualMark = async (req, res) => {
           "admin",
           admin.id
         );
-        
-      asistencia = db.prepare("SELECT * FROM asistencias WHERE id = ?").get(info.lastInsertRowid);
+
+      asistencia = db
+        .prepare("SELECT * FROM asistencias WHERE id = ?")
+        .get(info.lastInsertRowid);
     } else {
       // Update existing
-      let updateSql = "UPDATE asistencias SET marcadoPor = 'admin', manualBy = ?";
+      let updateSql =
+        "UPDATE asistencias SET marcadoPor = 'admin', manualBy = ?";
       const updateParams = [admin.id];
 
       if (tipo === "INGRESO") {
@@ -183,13 +193,15 @@ exports.manualMark = async (req, res) => {
         updateSql += ", horaEgreso = ?";
         updateParams.push(hora);
       }
-      
+
       updateSql += " WHERE id = ?";
       updateParams.push(asistencia.id);
 
       db.prepare(updateSql).run(...updateParams);
-      
-      asistencia = db.prepare("SELECT * FROM asistencias WHERE id = ?").get(asistencia.id);
+
+      asistencia = db
+        .prepare("SELECT * FROM asistencias WHERE id = ?")
+        .get(asistencia.id);
     }
 
     res.json({ message: "Marca manual registrada exitosamente", asistencia });
@@ -280,7 +292,7 @@ exports.getLlegadasTarde = async (req, res) => {
       sql += " AND a.fecha <= ?";
       params.push(to);
     }
-    
+
     // Sort logic
     sql += " ORDER BY a.fecha DESC, a.horaIngreso DESC";
 
@@ -288,31 +300,37 @@ exports.getLlegadasTarde = async (req, res) => {
 
     const toleranceMinutes = parseInt(tolerancia, 10);
 
-    const lateArrivals = records.filter(record => {
-      if (!record.horaIngreso) return false;
-      if (!record.horarioEntrada) return false;
+    const lateArrivals = records
+      .filter((record) => {
+        if (!record.horaIngreso) return false;
+        if (!record.horarioEntrada) return false;
 
-      // Convert times to minutes for comparison
-      const [ingresoH, ingresoM] = record.horaIngreso.split(':').map(Number);
-      const [entradaH, entradaM] = record.horarioEntrada.split(':').map(Number);
-      
-      const ingresoTotalMinutes = ingresoH * 60 + ingresoM;
-      const entradaTotalMinutes = entradaH * 60 + entradaM + toleranceMinutes;
+        // Convert times to minutes for comparison
+        const [ingresoH, ingresoM] = record.horaIngreso.split(":").map(Number);
+        const [entradaH, entradaM] = record.horarioEntrada
+          .split(":")
+          .map(Number);
 
-      return ingresoTotalMinutes > entradaTotalMinutes;
-    }).map(r => ({
-      ...r,
-      diferenciaMinutos: (() => {
-         const [ingresoH, ingresoM] = r.horaIngreso.split(':').map(Number);
-         const [entradaH, entradaM] = r.horarioEntrada.split(':').map(Number);
-         return (ingresoH * 60 + ingresoM) - (entradaH * 60 + entradaM);
-      })()
-    }));
+        const ingresoTotalMinutes = ingresoH * 60 + ingresoM;
+        const entradaTotalMinutes = entradaH * 60 + entradaM + toleranceMinutes;
+
+        return ingresoTotalMinutes > entradaTotalMinutes;
+      })
+      .map((r) => ({
+        ...r,
+        diferenciaMinutos: (() => {
+          const [ingresoH, ingresoM] = r.horaIngreso.split(":").map(Number);
+          const [entradaH, entradaM] = r.horarioEntrada.split(":").map(Number);
+          return ingresoH * 60 + ingresoM - (entradaH * 60 + entradaM);
+        })(),
+      }));
 
     res.json(lateArrivals);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al obtener reporte de llegadas tarde" });
+    res
+      .status(500)
+      .json({ message: "Error al obtener reporte de llegadas tarde" });
   }
 };
 
@@ -336,32 +354,36 @@ exports.exportLlegadasTarde = async (req, res) => {
       sql += " AND a.fecha <= ?";
       params.push(to);
     }
-    
+
     // Sort logic
     sql += " ORDER BY a.fecha DESC, a.horaIngreso DESC";
 
     const records = db.prepare(sql).all(...params);
     const toleranceMinutes = parseInt(tolerancia, 10);
 
-    const lateArrivals = records.filter(record => {
-      if (!record.horaIngreso) return false;
-      if (!record.horarioEntrada) return false;
+    const lateArrivals = records
+      .filter((record) => {
+        if (!record.horaIngreso) return false;
+        if (!record.horarioEntrada) return false;
 
-      const [ingresoH, ingresoM] = record.horaIngreso.split(':').map(Number);
-      const [entradaH, entradaM] = record.horarioEntrada.split(':').map(Number);
-      
-      const ingresoTotalMinutes = ingresoH * 60 + ingresoM;
-      const entradaTotalMinutes = entradaH * 60 + entradaM + toleranceMinutes;
+        const [ingresoH, ingresoM] = record.horaIngreso.split(":").map(Number);
+        const [entradaH, entradaM] = record.horarioEntrada
+          .split(":")
+          .map(Number);
 
-      return ingresoTotalMinutes > entradaTotalMinutes;
-    }).map(r => ({
-      ...r,
-      diferenciaMinutos: (() => {
-         const [ingresoH, ingresoM] = r.horaIngreso.split(':').map(Number);
-         const [entradaH, entradaM] = r.horarioEntrada.split(':').map(Number);
-         return (ingresoH * 60 + ingresoM) - (entradaH * 60 + entradaM);
-      })()
-    }));
+        const ingresoTotalMinutes = ingresoH * 60 + ingresoM;
+        const entradaTotalMinutes = entradaH * 60 + entradaM + toleranceMinutes;
+
+        return ingresoTotalMinutes > entradaTotalMinutes;
+      })
+      .map((r) => ({
+        ...r,
+        diferenciaMinutos: (() => {
+          const [ingresoH, ingresoM] = r.horaIngreso.split(":").map(Number);
+          const [entradaH, entradaM] = r.horarioEntrada.split(":").map(Number);
+          return ingresoH * 60 + ingresoM - (entradaH * 60 + entradaM);
+        })(),
+      }));
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Llegadas Tarde");
@@ -392,6 +414,8 @@ exports.exportLlegadasTarde = async (req, res) => {
     res.end();
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al exportar reporte de llegadas tarde" });
+    res
+      .status(500)
+      .json({ message: "Error al exportar reporte de llegadas tarde" });
   }
 };

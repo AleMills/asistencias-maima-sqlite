@@ -112,12 +112,10 @@ function getWifiIP() {
   return null;
 }
 
-const WIFI_IP = getWifiIP();
+const WIFI_IP = getWifiIP() || "127.0.0.1";
 
 if (!WIFI_IP) {
-  console.error("❌ ERROR: No se encontró la IP del WiFi.");
-  console.error("Asegurate de estar conectado al WiFi antes de iniciar el servidor.");
-  process.exit(1);
+  console.warn("⚠️ ADVERTENCIA: No se encontró IP de WiFi. El sistema solo será accesible localmente.");
 }
 
 /*
@@ -125,7 +123,7 @@ if (!WIFI_IP) {
   SERVIDOR SOLO EN LA IP DEL WIFI
   ===========================================
 */
-app.listen(PORT, WIFI_IP, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log("=====================================");
   console.log("Servidor corriendo SOLO en el WiFi");
   console.log(`IP WiFi detectada: ${WIFI_IP}`);

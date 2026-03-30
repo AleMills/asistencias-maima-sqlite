@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
-import { X, AlertTriangle } from "lucide-react";
+import { X, AlertTriangle, Check, Loader2 } from "lucide-react";
 
 const ManualMarkModal = ({ isOpen, onClose, onSuccess, empleadoId, fecha }) => {
   const [password, setPassword] = useState("");
@@ -12,7 +12,9 @@ const ManualMarkModal = ({ isOpen, onClose, onSuccess, empleadoId, fecha }) => {
   useEffect(() => {
     if (isOpen) {
       setPassword("");
-      setHora(new Date().toTimeString().slice(0, 5)); // HH:mm
+      const now = new Date();
+      const hhmm = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+      setHora(hhmm);
       setError("");
       setTipo("INGRESO");
     }
@@ -29,7 +31,7 @@ const ManualMarkModal = ({ isOpen, onClose, onSuccess, empleadoId, fecha }) => {
       await api.post("/asistencias/manual", {
         empleadoId,
         fecha,
-        hora, // HH:mm
+        hora,
         tipo,
         password,
       });
@@ -43,84 +45,112 @@ const ManualMarkModal = ({ isOpen, onClose, onSuccess, empleadoId, fecha }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
-        <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
-          <h3 className="text-lg font-medium text-gray-900">Marca Manual</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
-          >
-            <X className="w-6 h-6" />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div 
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200" 
+        onClick={onClose}
+      />
+      <div className="relative w-full max-w-lg bg-card border border-border rounded-xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+        <div className="flex flex-col space-y-1.5 p-6 border-b border-border">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold leading-none tracking-tight">Marca Manual</h3>
+            <button
+              onClick={onClose}
+              className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Registra una asistencia manualmente para el empleado seleccionado.
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-            <div className="flex">
-              <div className="shrink-0">
-                <AlertTriangle className="h-5 w-5 text-yellow-400" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  Esta acción requiere re-autenticación.
-                </p>
-              </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-yellow-700 uppercase tracking-wider">Seguridad</p>
+              <p className="text-sm text-yellow-700/80">
+                Esta acción requiere confirmar su contraseña de administrador.
+              </p>
             </div>
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium p-3 rounded-md text-center animate-in slide-in-from-top-1">
+              {error}
+            </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Tipo de Marca
-            </label>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              <option value="INGRESO">INGRESO</option>
-              <option value="EGRESO">EGRESO</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Tipo de Marca
+              </label>
+              <select
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="INGRESO">INGRESO</option>
+                <option value="EGRESO">EGRESO</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium leading-none">
+                Hora del Registro
+              </label>
+              <input
+                type="time"
+                required
+                value={hora}
+                onChange={(e) => setHora(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Hora (HH:mm)
-            </label>
-            <input
-              type="time"
-              required
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Contraseña de Admin
+          <div className="space-y-2">
+            <label className="text-xs font-medium leading-none">
+              Confirmar Contraseña
             </label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Confirme su contraseña"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="Contraseña de administrador"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
 
-          <div className="mt-5 sm:mt-6">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-2 sm:mt-0 inline-flex items-center justify-center rounded-md text-xs font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
+            >
+              Cancelar
+            </button>
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded-md text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 shadow disabled:opacity-50"
             >
-              {loading ? "Procesando..." : "Confirmar Marca"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Procesando
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-3 w-3" />
+                  Confirmar Marca
+                </>
+              )}
             </button>
           </div>
         </form>

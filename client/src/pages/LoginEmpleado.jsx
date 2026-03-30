@@ -21,59 +21,67 @@ const LoginEmpleado = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="max-w-md w-full bg-card rounded-lg shadow-sm border border-border p-8">
         <div className="flex justify-center mb-6">
-          <div className="bg-blue-100 p-3 rounded-full">
-            <User className="w-8 h-8 text-blue-600" />
+          <div className="bg-muted p-3 rounded-full">
+            <User className="w-8 h-8 text-foreground" />
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
-          Login Empleado
+        <h2 className="text-2xl font-semibold text-center text-foreground mb-1">
+          Acceso Empleado
         </h2>
+        <p className="text-sm text-muted-foreground text-center mb-8">
+          Ingresa tus credenciales para marcar asistencia
+        </p>
+        
         {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-center">
+          <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md mb-6 border border-destructive/20 text-center">
             {error}
           </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-6">
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground mb-1.5">
               Email o DNI
             </label>
             <input
               type="text"
               required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="nombre@ejemplo.com o 12345678"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground mb-1.5">
               Contraseña
             </label>
             <input
               type="password"
               required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="••••••••"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <button
             type="submit"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full mt-2"
           >
-            Ingresar
+            Iniciar Sesión
           </button>
         </form>
-        <div className="mt-6 text-center">
+        
+        <div className="mt-8 pt-6 border-t border-border text-center">
           <a
             href="/admin/login"
-            className="text-sm text-blue-600 hover:text-blue-500"
+            className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
           >
-            ¿Eres administrador? Ingresa aquí
+            ¿Eres administrador? Ingreso Gestión
           </a>
         </div>
       </div>
